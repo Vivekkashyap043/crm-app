@@ -16,8 +16,8 @@ exports.getAnalytics = async (req, res) => {
     // Avg deal size
     const avgDealSize = wonLeads.length ? (totalRevenue / wonLeads.length).toFixed(0) : 0;
 
-    // Leads by status
-    const statusList = ['qualified', 'proposal', 'new', 'won', 'contacted'];
+    // Leads by status (include all possible statuses)
+    const statusList = ['qualified', 'proposal', 'new', 'won', 'converted', 'contacted', 'lost'];
     const leadsByStatus = {};
     statusList.forEach(s => { leadsByStatus[s] = 0; });
     leads.forEach(l => {

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import Modal from '../components/Modal';
 
 const statusColors = {
   active: '#22c55e',
@@ -12,26 +14,32 @@ const statusColors = {
 
 export default function Dashboard() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+  const [modalForm, setModalForm] = useState({ name: '', email: '', phone: '', company: '' });
+  const [modalId, setModalId] = useState(null);
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/customers/dashboard/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSummary(res.data.summary);
+      setCustomers(res.data.customers);
+    } catch (err) {
+      setError('Failed to load dashboard data');
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/customers/dashboard/summary`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSummary(res.data.summary);
-        setCustomers(res.data.customers);
-      } catch (err) {
-        setError('Failed to load dashboard data');
-      }
-      setLoading(false);
-    };
-    fetchData();
+    fetchDashboard();
   }, [token]);
 
   if (loading) return <div className="container py-5 text-center">Loading dashboard...</div>;
@@ -69,7 +77,14 @@ export default function Dashboard() {
             <h2 className="fw-bold mb-0" style={{ fontSize: 28 }}>Customers</h2>
             <div className="text-muted" style={{ fontSize: 16 }}>Manage your customer database</div>
           </div>
-          <button className="btn btn-primary fw-bold" style={{ fontSize: 16, borderRadius: 8 }}>
+          <button className="btn btn-primary fw-bold" style={{ fontSize: 16, borderRadius: 8 }}
+            onClick={() => {
+              setModalMode('add');
+              setModalForm({ name: '', email: '', phone: '', company: '' });
+              setModalId(null);
+              setShowModal(true);
+            }}
+          >
             <span style={{ fontSize: 20, marginRight: 6 }}>+</span> Add Customer
           </button>
         </div>
@@ -107,9 +122,31 @@ export default function Dashboard() {
                   <td className="fw-bold">${c.value.toLocaleString()}</td>
                   <td>{c.leads} lead{c.leads !== 1 ? 's' : ''}</td>
                   <td>
-                    <span className="me-2" style={{ cursor: 'pointer', color: '#0ea5e9', fontSize: 18 }} title="View">👁️</span>
-                    <span className="me-2" style={{ cursor: 'pointer', color: '#64748b', fontSize: 18 }} title="Edit">✏️</span>
-                    <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: 18 }} title="Delete">🗑️</span>
+                    <span className="me-2" style={{ cursor: 'pointer', color: '#0ea5e9', fontSize: 18 }} title="View"
+                      onClick={() => navigate(`/customers/${c._id || ''}`)}
+                    >👁️</span>
+                    <span className="me-2" style={{ cursor: 'pointer', color: '#64748b', fontSize: 18 }} title="Edit"
+                      onClick={() => {
+                        setModalMode('edit');
+                        setModalForm({ name: c.name, email: c.email, phone: c.phone, company: c.company });
+                        setModalId(c._id);
+                        setShowModal(true);
+                      }}
+                    >✏️</span>
+                    <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: 18 }} title="Delete"
+                      onClick={async () => {
+                        if (window.confirm('Delete this customer?')) {
+                          try {
+                            await axios.delete(`${API_BASE_URL}/api/customers/${c._id}`, {
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                            fetchDashboard();
+                          } catch (err) {
+                            alert('Error deleting customer');
+                          }
+                        }
+                      }}
+                    >🗑️</span>
                   </td>
                 </tr>
               ))}
@@ -117,6 +154,47 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      {/* Modal for Add/Edit Customer */}
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={modalMode === 'add' ? 'Add Customer' : 'Edit Customer'}>
+        <form onSubmit={async e => {
+          e.preventDefault();
+          try {
+            if (modalMode === 'edit' && modalId) {
+              await axios.put(`${API_BASE_URL}/api/customers/${modalId}`, modalForm, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+            } else {
+              await axios.post(`${API_BASE_URL}/api/customers`, modalForm, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+            }
+            setShowModal(false);
+            setModalForm({ name: '', email: '', phone: '', company: '' });
+            setModalId(null);
+            fetchDashboard();
+          } catch (err) {
+            alert(err.response?.data?.message || 'Error saving customer');
+          }
+        }}>
+          <div className="mb-3">
+            <input className="form-control" placeholder="Name" value={modalForm.name} onChange={e => setModalForm(f => ({ ...f, name: e.target.value }))} required />
+          </div>
+          <div className="mb-3">
+            <input className="form-control" placeholder="Email" value={modalForm.email} onChange={e => setModalForm(f => ({ ...f, email: e.target.value }))} required />
+          </div>
+          <div className="mb-3">
+            <input className="form-control" placeholder="Phone" value={modalForm.phone} onChange={e => setModalForm(f => ({ ...f, phone: e.target.value }))} />
+          </div>
+          <div className="mb-3">
+            <input className="form-control" placeholder="Company" value={modalForm.company} onChange={e => setModalForm(f => ({ ...f, company: e.target.value }))} />
+          </div>
+          <div className="d-flex justify-content-end gap-2">
+            <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary fw-bold">{modalMode === 'add' ? 'Add' : 'Update'}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

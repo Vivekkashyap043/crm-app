@@ -40,16 +40,17 @@ export default function Reporting() {
   if (loading) return <div className="container py-5 text-center">Loading reports...</div>;
   if (error) return <div className="container py-5 text-center text-danger">{error}</div>;
 
-  // Pie chart: Leads by Status
-  const pieLabels = Object.keys(data.leadsByStatus);
-  const pieData = Object.values(data.leadsByStatus);
+  // Pie chart: Leads by Status (show only statuses with count > 0)
+  const pieLabels = Object.keys(data.leadsByStatus).filter((k, i) => data.leadsByStatus[k] > 0);
+  const pieData = pieLabels.map(k => data.leadsByStatus[k]);
+  const pieColors = pieLabels.map((k, i) => statusColors[Object.keys(data.leadsByStatus).indexOf(k)]);
   const pieChart = {
     labels: pieLabels,
     datasets: [
       {
         label: 'Leads by Status',
         data: pieData,
-        backgroundColor: statusColors,
+        backgroundColor: pieColors,
       },
     ],
   };
@@ -135,7 +136,21 @@ export default function Reporting() {
         <div className="col-md-6">
           <div className="card p-4 h-100 border-0 shadow-sm" style={{ borderRadius: 14 }}>
             <div className="fw-bold mb-2" style={{ fontSize: 20 }}>Leads by Status</div>
-            <Pie data={pieChart} />
+            <Pie data={pieChart} options={{
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.parsed || 0;
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                      return `${label}: ${value} lead${value !== 1 ? 's' : ''} (${percent}%)`;
+                    }
+                  }
+                }
+              }
+            }} />
           </div>
         </div>
         <div className="col-md-6">
