@@ -6,8 +6,8 @@ graph TD
   Customer["customers\n_id\nname\nemail\nphone\ncompany\nownerId (User._id)"]
   Lead["leads\n_id\ncustomerId (Customer._id)\ntitle\ndescription\nstatus\nvalue\ncreatedAt"]
 
-  User -->|owns| Customer
-  Customer -->|has| Lead
+  User --> Customer
+  Customer --> Lead
 ```
 
 - **users**: Registered users (Admin/User)
