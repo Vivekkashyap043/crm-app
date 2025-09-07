@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -27,5 +28,13 @@ if (process.env.NODE_ENV !== 'test') {
     })
     .catch((err) => console.error('MongoDB connection error:', err));
 }
+
+
+// Serve static files from the React app in production
+app.use(express.static(path.join(__dirname, '../client/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 
 module.exports = app;

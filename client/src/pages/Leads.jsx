@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../api';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 
 const statusColors = {
@@ -21,6 +22,9 @@ export default function Leads() {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  // For delete confirmation
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLead, setDeleteLead] = useState(null);
 
   // Fetch all customers and all leads
   useEffect(() => {
@@ -105,16 +109,9 @@ export default function Leads() {
     setEditingId(lead._id);
   };
 
-  const handleDelete = async lead => {
-    if (!window.confirm('Delete this lead?')) return;
-    try {
-      await axios.delete(`${API_BASE_URL}/api/customers/${lead.customer._id}/leads/${lead._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLeads(leads.filter(l => l._id !== lead._id));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error deleting lead');
-    }
+  const handleDelete = lead => {
+    setDeleteLead(lead);
+    setShowDeleteModal(true);
   };
 
   const filteredLeads = filter ? leads.filter(l => l.status === filter) : leads;
@@ -222,6 +219,26 @@ export default function Leads() {
             </tbody>
           </table>
         </div>
+      {/* Modal for Delete Confirmation */}
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Lead">
+        <div className="mb-3">Are you sure you want to delete <b>{deleteLead?.title}</b> for customer <b>{deleteLead?.customer?.name}</b>?</div>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+          <button type="button" className="btn btn-danger fw-bold" onClick={async () => {
+            if (!deleteLead) return;
+            try {
+              await axios.delete(`${API_BASE_URL}/api/customers/${deleteLead.customer._id}/leads/${deleteLead._id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              setLeads(leads.filter(l => l._id !== deleteLead._id));
+              setShowDeleteModal(false);
+              setDeleteLead(null);
+            } catch (err) {
+              setError(err.response?.data?.message || 'Error deleting lead');
+            }
+          }}>Delete</button>
+        </div>
+      </Modal>
       </div>
     </div>
   );

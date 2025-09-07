@@ -4,6 +4,7 @@ import axios from 'axios';
 import API_BASE_URL from '../api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import Modal from '../components/Modal';
 
 export default function Customers() {
   const { token } = useAuth();
@@ -14,6 +15,10 @@ export default function Customers() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '' });
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  // For delete confirmation
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteCustomerId, setDeleteCustomerId] = useState(null);
+  const [deleteCustomerName, setDeleteCustomerName] = useState('');
 
   const fetchCustomers = async () => {
     try {
@@ -59,16 +64,11 @@ export default function Customers() {
     setEditingId(customer._id);
   };
 
-  const handleDelete = async id => {
-    if (!window.confirm('Delete this customer?')) return;
-    try {
-  await axios.delete(`${API_BASE_URL}/api/customers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchCustomers();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error deleting customer');
-    }
+  const handleDelete = id => {
+    const customer = customers.find(c => c._id === id);
+    setDeleteCustomerId(id);
+    setDeleteCustomerName(customer ? customer.name : '');
+    setShowDeleteModal(true);
   };
 
   return (
@@ -136,6 +136,26 @@ export default function Customers() {
           <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
           <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => (p * 10 < total ? p + 1 : p))} disabled={page * 10 >= total}>Next</button>
         </div>
+      {/* Modal for Delete Confirmation */}
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Customer">
+        <div className="mb-3">Are you sure you want to delete <b>{deleteCustomerName}</b>?</div>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+          <button type="button" className="btn btn-danger fw-bold" onClick={async () => {
+            try {
+              await axios.delete(`${API_BASE_URL}/api/customers/${deleteCustomerId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              setShowDeleteModal(false);
+              setDeleteCustomerId(null);
+              setDeleteCustomerName('');
+              fetchCustomers();
+            } catch (err) {
+              setError('Error deleting customer');
+            }
+          }}>Delete</button>
+        </div>
+      </Modal>
       </div>
     </div>
   );

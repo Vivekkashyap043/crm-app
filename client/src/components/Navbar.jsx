@@ -1,12 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  // DEBUG: Log user value to diagnose navbar update issue
-  console.log('Navbar user:', user);
+  const location = useLocation();
   const isAuthenticated = !!user;
 
   const handleLogout = () => {
@@ -23,10 +22,18 @@ export default function Navbar() {
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            <li className="nav-item"><Link className="nav-link" to="/dashboard">Dashboard</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/customers">Customers</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/leads">Leads</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/reporting">Reporting</Link></li>
+            <li className="nav-item">
+              <Link className={`nav-link${location.pathname === '/dashboard' ? ' active-tab' : ''}`} to="/dashboard">Dashboard</Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link${location.pathname === '/customers' ? ' active-tab' : ''}`} to="/customers">Customers</Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link${location.pathname === '/leads' ? ' active-tab' : ''}`} to="/leads">Leads</Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link${location.pathname === '/reporting' ? ' active-tab' : ''}`} to="/reporting">Reporting</Link>
+            </li>
           </ul>
           <ul className="navbar-nav align-items-center">
             {isAuthenticated ? (
