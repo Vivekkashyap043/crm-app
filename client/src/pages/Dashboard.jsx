@@ -23,6 +23,10 @@ export default function Dashboard() {
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [modalForm, setModalForm] = useState({ name: '', email: '', phone: '', company: '' });
   const [modalId, setModalId] = useState(null);
+  // For delete confirmation
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteCustomerId, setDeleteCustomerId] = useState(null);
+  const [deleteCustomerName, setDeleteCustomerName] = useState('');
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -134,17 +138,10 @@ export default function Dashboard() {
                       }}
                     >✏️</span>
                     <span style={{ cursor: 'pointer', color: '#ef4444', fontSize: 18 }} title="Delete"
-                      onClick={async () => {
-                        if (window.confirm('Delete this customer?')) {
-                          try {
-                            await axios.delete(`${API_BASE_URL}/api/customers/${c._id}`, {
-                              headers: { Authorization: `Bearer ${token}` },
-                            });
-                            fetchDashboard();
-                          } catch (err) {
-                            alert('Error deleting customer');
-                          }
-                        }
+                      onClick={() => {
+                        setDeleteCustomerId(c._id);
+                        setDeleteCustomerName(c.name);
+                        setShowDeleteModal(true);
                       }}
                     >🗑️</span>
                   </td>
@@ -194,6 +191,27 @@ export default function Dashboard() {
             <button type="submit" className="btn btn-primary fw-bold">{modalMode === 'add' ? 'Add' : 'Update'}</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal for Delete Confirmation */}
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Customer">
+        <div className="mb-3">Are you sure you want to delete <b>{deleteCustomerName}</b>?</div>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+          <button type="button" className="btn btn-danger fw-bold" onClick={async () => {
+            try {
+              await axios.delete(`${API_BASE_URL}/api/customers/${deleteCustomerId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              setShowDeleteModal(false);
+              setDeleteCustomerId(null);
+              setDeleteCustomerName('');
+              fetchDashboard();
+            } catch (err) {
+              alert('Error deleting customer');
+            }
+          }}>Delete</button>
+        </div>
       </Modal>
     </div>
   );
