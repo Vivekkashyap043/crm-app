@@ -2,12 +2,12 @@
 
 ```mermaid
 graph TD
-  User["users\n- _id\n- name\n- email\n- passwordHash\n- role"]
-  Customer["customers\n- _id\n- name\n- email\n- phone\n- company\n- ownerId (User._id)"]
-  Lead["leads\n- _id\n- customerId (Customer._id)\n- title\n- description\n- status\n- value\n- createdAt"]
+  User["users\n_id\nname\nemail\npasswordHash\nrole"]
+  Customer["customers\n_id\nname\nemail\nphone\ncompany\nownerId (User._id)"]
+  Lead["leads\n_id\ncustomerId (Customer._id)\ntitle\ndescription\nstatus\nvalue\ncreatedAt"]
 
-  User --|owns| Customer
-  Customer --|has| Lead
+  User -->|owns| Customer
+  Customer -->|has| Lead
 ```
 
 - **users**: Registered users (Admin/User)
