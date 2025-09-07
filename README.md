@@ -93,4 +93,13 @@ npm install
 
 ---
 
+
+---
+
+## Note on Deployment
+
+To deploy the app as a single service (backend serves frontend), code was added to `server/server.js` to serve the frontend build (`client/dist`) as static files. This means you do **not** need to deploy the frontend separately—just deploy the backend and it will serve the React app automatically.
+
+If you ever want to deploy the frontend separately, you should remove or comment out the static serving code from `server.js`.
+
 For any issues, please open an issue on the repository or contact the maintainer.

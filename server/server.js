@@ -31,9 +31,33 @@ if (process.env.NODE_ENV !== 'test') {
 
 
 // Serve static files from the React app in production
+
 app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+
+// Serve React app for all non-API routes
+app.get(/^\/(?!api).*/, (req, res, next) => {
+  const indexPath = path.join(__dirname, '../client/dist/index.html');
+  res.sendFile(indexPath, function(err) {
+    if (err) {
+      next(err);
+    }
+  });
+});
+
+// 404 handler for unknown API or static routes
+app.use((req, res, next) => {
+  // If it's an API route, return JSON 404
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  // For frontend, serve a custom 404.html if it exists, else send text
+  const notFoundPath = path.join(__dirname, '../client/dist/404.html');
+  res.status(404);
+  res.sendFile(notFoundPath, err => {
+    if (err) {
+      res.type('text/plain').send('404: Page Not Found');
+    }
+  });
 });
 
 
