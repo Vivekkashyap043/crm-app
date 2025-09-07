@@ -1,14 +1,28 @@
 # CRM Mini App - MongoDB Schema Diagram
 
-```mermaid
-graph TD
-  User["users\n_id\nname\nemail\npasswordHash\nrole"]
-  Customer["customers\n_id\nname\nemail\nphone\ncompany\nownerId (User._id)"]
-  Lead["leads\n_id\ncustomerId (Customer._id)\ntitle\ndescription\nstatus\nvalue\ncreatedAt"]
 
-  User --> Customer
-  Customer --> Lead
-```
+## Collections
+
+| users         | customers         | leads                |
+|---------------|------------------|----------------------|
+| _id           | _id              | _id                  |
+| name          | name             | customerId (FK)      |
+| email         | email            | title                |
+| passwordHash  | phone            | description          |
+| role          | company          | status               |
+|               | ownerId (User._id FK) | value           |
+|               |                  | createdAt            |
+
+## Relationships
+
+users._id ──┬─▶ customers.ownerId
+            │
+            └─────────────▶ leads.customerId
+customers._id ────────────▶ leads.customerId
+
+* users (Admin/User) can own many customers (ownerId)
+* customers can have many leads (customerId)
+
 
 - **users**: Registered users (Admin/User)
 - **customers**: Each customer belongs to a user (ownerId)
